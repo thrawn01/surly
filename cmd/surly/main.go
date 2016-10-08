@@ -20,8 +20,6 @@ func checkErr(err error) {
 //               |- image -| |-          standard golang arguments           -|
 //    $ go-build golang:1.7  build -o amd64-my-prog -installsuffix static ./...
 func main() {
-	var config surly.BuilderConfig
-
 	parser := args.NewParser()
 	parser.AddArgument("image").
 		Help("name of the docker image to build with")
@@ -34,11 +32,8 @@ func main() {
 	options := parser.ParseArgsSimple(nil)
 
 	// Create a builder object that will run the go command
-	builder, err := surly.Factory(config)
+	builder, err := surly.Factory(options.String("runtime"), options.ToMap())
 	checkErr(err)
-
-	// Verify all the required options are provided
-	checkErr(options.Required(builder.Required()))
 
 	// Run the go command within the selected builder (rkt, docker, kvm)
 	checkErr(builder.Run(parser.GetArgs()))

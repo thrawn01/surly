@@ -1,39 +1,27 @@
 package surly
 
+import "github.com/pkg/errors"
+
 type BuilderConfig struct {
 	Runtime    string
 	OutputFile string
 	Image      string
 }
 
-type BuilderFactory func(BuilderConfig) (Builder, error)
+type BuilderFactory func(map[string]interface{}) (Builder, error)
 
 // Implement this interface to create a new builder
 type Builder interface {
 	Run([]string) error
-	SetConfig(BuilderConfig)
-	Required() []string
 }
-
-// Noop concrete builder
-type Build struct {
-}
-
-// Noop run impl
-func (self *Build) Run(args []string) error {
-	return nil
-}
-
-// No options are required
-func (self *Build) Required() []string {
-	return []string{}
-}
-
-var _ Builder = &Build{}
 
 // Builds a new Builder object from the options provided
-func Factory(builder string) (Builder, error) {
-	return &Build{}, nil
+func Factory(builder string, config map[string]interface{}) (Builder, error) {
+	factory, ok := SupportedBuilders[builder]
+	if !ok {
+		errors.Errorf("Unsupported builder '%s' valid builders are(%s)", builder, GetBuilders())
+	}
+	return factory(config)
 }
 
 // A list of supported builders
