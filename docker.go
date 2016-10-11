@@ -1,9 +1,14 @@
 package surly
 
 import (
+	"log"
 	"strings"
 
+	"fmt"
+
+	"github.com/ahmetalpbalkan/go-dexec"
 	"github.com/fatih/structs"
+	"github.com/fsouza/go-dockerclient"
 	"github.com/pkg/errors"
 )
 
@@ -15,12 +20,19 @@ type DockerConfig struct {
 
 type DockerBuilder struct {
 	config DockerConfig
+	client *docker.Client
 }
 
 // Returns a new docker builder using the passed config
 func NewDockerBuilder(config DockerConfig) (*DockerBuilder, error) {
+	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		return nil, errors.Wrap(err, "surly.NewDockerBuilder()")
+	}
+
 	return &DockerBuilder{
 		config: config,
+		client: client,
 	}, nil
 }
 
@@ -42,6 +54,17 @@ func DockerFactory(src map[string]interface{}) (Builder, error) {
 
 // Run the specified golang command inside a container
 func (self *DockerBuilder) Run(args []string) error {
+	exec := dexec.Docker{Client: self.client}
+
+	m, _ := dexec.ByCreatingContainer(docker.CreateContainerOptions{
+		Config: &docker.Config{Image: "busybox"}})
+
+	cmd := exec.Command(m, "echo", `I am running inside a container!`)
+	b, err := cmd.Output()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%s", b)
 	return nil
 }
 
