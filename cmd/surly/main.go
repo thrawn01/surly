@@ -3,14 +3,27 @@ package main
 import (
 	"os"
 
+	"fmt"
+
+	"strings"
+
 	"github.com/thrawn01/args"
 	"github.com/thrawn01/surly"
 )
 
 func checkErr(err error) {
 	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
 		os.Exit(1)
 	}
+}
+
+func removeHyphens(src map[string]interface{}) map[string]interface{} {
+	dst := make(map[string]interface{}, len(src))
+	for key, value := range src {
+		dst[strings.Replace(key, "-", "", -1)] = value
+	}
+	return dst
 }
 
 // Invoke like so
@@ -30,7 +43,7 @@ func main() {
 	options := parser.ParseArgsSimple(nil)
 
 	// Create a builder object that will run the go command
-	builder, err := surly.Factory(options.String("runtime"), options.ToMap())
+	builder, err := surly.Factory(options.String("runtime"), removeHyphens(options.ToMap()))
 	checkErr(err)
 
 	// Run the go command within the selected builder (rkt, docker, kvm)
