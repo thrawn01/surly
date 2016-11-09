@@ -1,10 +1,11 @@
 package surly
 
 import (
-	"log"
 	"strings"
 
 	"fmt"
+
+	"path/filepath"
 
 	"github.com/ahmetalpbalkan/go-dexec"
 	"github.com/fatih/structs"
@@ -13,9 +14,11 @@ import (
 )
 
 type DockerConfig struct {
-	Output  string
-	Runtime string
-	Image   string
+	Output     string // output to copy the resulting executable
+	Runtime    string
+	Image      string
+	WorkingDir string // The working directory inside the container
+	GoPath     string // $GOPATH
 }
 
 type DockerBuilder struct {
@@ -26,6 +29,12 @@ type DockerBuilder struct {
 // Returns a new docker builder using the passed config
 func NewDockerBuilder(config DockerConfig) (*DockerBuilder, error) {
 	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		return nil, errors.Wrap(err, "surly.NewDockerBuilder()")
+	}
+
+	// Calculate the absolute path of the output
+	config.Output, err = filepath.Abs(config.Output)
 	if err != nil {
 		return nil, errors.Wrap(err, "surly.NewDockerBuilder()")
 	}
@@ -41,7 +50,8 @@ func DockerFactory(src map[string]interface{}) (Builder, error) {
 	config := DockerConfig{}
 	s := structs.New(&config)
 	for _, name := range s.Names() {
-		fieldName := strings.ToLower(name)
+		// Lowercase and remove any hyphens
+		fieldName := strings.Replace(strings.ToLower(name), "-", "", -1)
 		value, ok := src[fieldName]
 		if !ok {
 			errors.Errorf("DockerBuilder: Missing required field %s", fieldName)
@@ -52,19 +62,51 @@ func DockerFactory(src map[string]interface{}) (Builder, error) {
 	return NewDockerBuilder(config)
 }
 
+func (self *DockerBuilder) BuildMounts() []docker.Mount {
+	return []docker.Mount{
+		{
+			Name:        "GoPathMount",
+			Source:      self.config.GoPath,
+			Destination: "/go",
+		},
+		/*{
+			Source:      path.Base(self.config.Output),
+			Destination: "/go/bin",
+		},*/
+	}
+}
+
 // Run the specified golang command inside a container
 func (self *DockerBuilder) Run(args []string) error {
 	exec := dexec.Docker{Client: self.client}
 
-	m, _ := dexec.ByCreatingContainer(docker.CreateContainerOptions{
-		Config: &docker.Config{Image: "busybox"}})
-
-	cmd := exec.Command(m, "echo", `I am running inside a container!`)
-	b, err := cmd.Output()
-	if err != nil {
-		log.Fatal(err)
+	dockerConfig := docker.Config{
+		Image:      self.config.Image,
+		Mounts:     self.BuildMounts(),
+		Env:        []string{"CGO_ENABLED=0"},
+		WorkingDir: self.config.WorkingDir,
 	}
+
+	m, err := dexec.ByCreatingContainer(docker.CreateContainerOptions{Config: &dockerConfig})
+	if err != nil {
+		return errors.Wrap(err, "ByCreatingContainer()")
+	}
+
+	/*args := make([]string, len(srcArgs)+1)
+	args[0] = "go"
+	for i := 1; i < len(args); i++ {
+		args[i] = srcArgs[i-1]
+	}*/
+
+	cmd := exec.Command(m, "go", args...)
+	b, err := cmd.Output()
 	fmt.Printf("%s", b)
+	if err != nil {
+		if exitErr, ok := err.(*dexec.ExitError); ok == true {
+			fmt.Print(string(exitErr.Stderr))
+		}
+		return errors.Wrap(err, "exec.Comand()")
+	}
 	return nil
 }
 
