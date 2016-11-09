@@ -1,4 +1,5 @@
 .idea/
 *.iml
 bin/
+vendor/
 glide.lock

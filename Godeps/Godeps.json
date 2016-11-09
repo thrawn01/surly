@@ -1,0 +1,45 @@
+{
+	"ImportPath": "github.com/thrawn01/surly",
+	"GoVersion": "go1.7",
+	"GodepVersion": "v75",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/fatih/structs",
+			"Rev": "dc3312cb1a4513a366c4c9e622ad55c32df12ed3"
+		},
+		{
+			"ImportPath": "github.com/go-ini/ini",
+			"Comment": "v1.21.1",
+			"Rev": "6e4869b434bd001f6983749881c7ead3545887d8"
+		},
+		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.8.0-2-g248dadf",
+			"Rev": "248dadf4e9068a0b3e79f02ed0a610d935de5302"
+		},
+		{
+			"ImportPath": "github.com/spf13/cast",
+			"Rev": "2580bc98dc0e62908119e4737030cc2fdfc45e4c"
+		},
+		{
+			"ImportPath": "github.com/thrawn01/args",
+			"Rev": "ca8ecc799b107d16a85ff6d5bc9cd7606036aacf"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "158696dc0dc66f3574e7e2abb8bbf02c65571307"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "9a2e24c3733eddc63871eda99f253e2db29bd3b9"
+		},
+		{
+			"ImportPath": "gopkg.in/fsnotify.v1",
+			"Comment": "v1.3.1",
+			"Rev": "a8a77c9133d2d6fd8334f3260d06f60e8d80a5fb"
+		}
+	]
+}
